@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sanctions-db
+    environment:
+      POSTGRES_DB: sanctions
+      POSTGRES_USER: sanctions
+      POSTGRES_PASSWORD: sanctions
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sanctions"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Scheduler service (optional - run separately or as a service)
+  scheduler:
+    build: .
+    container_name: sanctions-scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://sanctions:sanctions@postgres:5432/sanctions
+      LOG_LEVEL: INFO
+      UPDATE_SCHEDULE_HOUR: 2
+      UPDATE_SCHEDULE_MINUTE: 0
+      TIMEZONE: UTC
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    command: python -m src.scheduler
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

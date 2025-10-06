@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UK Sanctions List Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .search-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .search-options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            color: #666;
+        }
+
+        .search-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        .stats {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .results {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .result-count {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .entity-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .entity-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .entity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .entity-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .entity-type {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .entity-type.individual {
+            background: #48bb78;
+        }
+
+        .entity-id {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .entity-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .detail-item {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .aliases, .sanctions {
+            margin-top: 10px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e0e7ff;
+            color: #5568d3;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            margin: 3px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border-left: 4px solid #f44;
+            padding: 15px;
+            border-radius: 8px;
+            color: #c33;
+            margin-top: 15px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 30px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 UK Sanctions List Search</h1>
+            <p class="subtitle">Search the UK Government's sanctions list database</p>
+        </header>
+
+        <div id="stats" class="stats" style="display: none;">
+            Loading statistics...
+        </div>
+
+        <div class="search-box">
+            <div class="search-controls">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="Search for names, entities, or keywords..."
+                    autocomplete="off"
+                >
+                <button id="searchBtn">Search</button>
+            </div>
+            <div class="search-options">
+                <label>
+                    <input type="radio" name="searchType" value="fulltext" checked>
+                    Full-text search
+                </label>
+                <label>
+                    <input type="radio" name="searchType" value="exact">
+                    Exact name match
+                </label>
+                <label>
+                    <input type="radio" name="searchType" value="partial">
+                    Partial name match
+                </label>
+            </div>
+        </div>
+
+        <div id="results" class="results" style="display: none;">
+            <div class="result-header">
+                <div class="result-count" id="resultCount"></div>
+                <button id="clearBtn" style="padding: 8px 16px; font-size: 14px;">Clear</button>
+            </div>
+            <div id="resultsList"></div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Data from <a href="https://www.gov.uk/government/publications/the-uk-sanctions-list" style="color: white;">UK Sanctions List</a>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+
+        // Load stats on page load
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_URL}/api/stats`);
+                const data = await response.json();
+
+                const statsDiv = document.getElementById('stats');
+                statsDiv.innerHTML = `
+                    <strong>${data.total_entities.toLocaleString()}</strong> total entities •
+                    <strong>${data.individuals.toLocaleString()}</strong> individuals •
+                    <strong>${data.organizations.toLocaleString()}</strong> organizations •
+                    <strong>${data.total_aliases.toLocaleString()}</strong> aliases
+                `;
+                statsDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // Search function
+        async function search() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+
+            if (!query) {
+                alert('Please enter a search term');
+                return;
+            }
+
+            const searchType = document.querySelector('input[name="searchType"]:checked').value;
+            const resultsDiv = document.getElementById('results');
+            const resultsListDiv = document.getElementById('resultsList');
+            const resultCountDiv = document.getElementById('resultCount');
+            const searchBtn = document.getElementById('searchBtn');
+
+            // Show loading
+            resultsDiv.style.display = 'block';
+            resultsListDiv.innerHTML = '<div class="loading"><div class="spinner"></div>Searching...</div>';
+            searchBtn.disabled = true;
+
+            try {
+                let url;
+                if (searchType === 'fulltext') {
+                    url = `${API_URL}/api/search?q=${encodeURIComponent(query)}&limit=10000`;
+                } else {
+                    const exact = searchType === 'exact';
+                    url = `${API_URL}/api/entities?name=${encodeURIComponent(query)}&exact=${exact}&limit=10000`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Search failed');
+
+                const data = await response.json();
+
+                resultCountDiv.textContent = `Found ${data.count} result${data.count !== 1 ? 's' : ''} for "${query}"`;
+
+                if (data.count === 0) {
+                    resultsListDiv.innerHTML = '<div class="no-results">No results found. Try a different search term.</div>';
+                } else {
+                    resultsListDiv.innerHTML = data.results.map(entity => createEntityCard(entity)).join('');
+                }
+            } catch (error) {
+                resultsListDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                searchBtn.disabled = false;
+            }
+        }
+
+        // Create entity card HTML
+        function createEntityCard(entity) {
+            const typeClass = entity.entity_type === 'Individual' ? 'individual' : 'entity';
+
+            let details = [];
+            if (entity.date_of_birth) details.push(`DOB: ${new Date(entity.date_of_birth).toLocaleDateString()}`);
+            if (entity.place_of_birth) details.push(`Born: ${entity.place_of_birth}`);
+            if (entity.nationality) details.push(`Nationality: ${entity.nationality}`);
+            if (entity.date_listed) details.push(`Listed: ${new Date(entity.date_listed).toLocaleDateString()}`);
+
+            return `
+                <div class="entity-card">
+                    <div class="entity-header">
+                        <div>
+                            <div class="entity-name">${entity.name}</div>
+                            <div class="entity-id">ID: ${entity.unique_id}</div>
+                        </div>
+                        <span class="entity-type ${typeClass}">${entity.entity_type}</span>
+                    </div>
+
+                    ${details.length > 0 ? `
+                        <div class="entity-details">
+                            ${details.map(d => `<div class="detail-item">${d}</div>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${entity.aliases.length > 0 ? `
+                        <div class="aliases">
+                            <span class="detail-label">Aliases:</span><br>
+                            ${entity.aliases.slice(0, 5).map(a => `<span class="tag">${a.alias_name}</span>`).join('')}
+                            ${entity.aliases.length > 5 ? `<span class="tag">+${entity.aliases.length - 5} more</span>` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${entity.sanctions.length > 0 ? `
+                        <div class="sanctions">
+                            <span class="detail-label">Sanctions:</span><br>
+                            ${entity.sanctions.map(s => `<div style="margin-top: 5px; color: #666; font-size: 0.85rem;">${s.regime_name}</div>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('searchBtn').addEventListener('click', search);
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') search();
+        });
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('results').style.display = 'none';
+        });
+
+        // Load stats on page load
+        loadStats();
+    </script>
+</body>
+</html>
