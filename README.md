@@ -30,7 +30,48 @@ sanctions/
 
 ## Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Railway (Easiest - One-Click Deploy)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new)
+
+1. **Click the button above or manual setup**:
+   - Go to [Railway](https://railway.app)
+   - Create new project from GitHub repo
+   - Connect your GitHub account and select this repo
+
+2. **Add PostgreSQL service**:
+   - In your Railway project, click "+ New"
+   - Select "Database" → "PostgreSQL"
+   - Railway automatically sets `DATABASE_URL`
+
+3. **Configure environment variables** (optional):
+   - `UPDATE_SCHEDULE_HOUR` - Hour to run daily update (default: 2)
+   - `TIMEZONE` - Timezone for scheduling (default: UTC)
+   - `LOG_LEVEL` - Logging verbosity (default: INFO)
+
+4. **Deploy**:
+   - Railway automatically deploys on git push
+   - Get your app URL from Railway dashboard
+   - Access API docs at: `https://your-app.railway.app/docs`
+   - Web interface at: `https://your-app.railway.app/static/index.html`
+
+5. **Run initial data update**:
+   ```bash
+   # Using Railway CLI
+   railway run python manage.py update
+
+   # Or via Railway dashboard → Variables → Add RUN_UPDATE=true
+   ```
+
+6. **Setup scheduler (for daily updates)**:
+   - Create a second service in Railway
+   - Use same GitHub repo
+   - Set custom start command: `python -m src.scheduler`
+   - Uses the same DATABASE_URL automatically
+
+**That's it!** Your API is live and ready to use.
+
+### Option 2: Docker (Recommended for Self-Hosting)
 
 1. **Clone and setup**:
    ```bash
@@ -56,7 +97,7 @@ sanctions/
 
 The scheduler will now run daily updates automatically at 2 AM UTC (configurable in `.env`).
 
-### Option 2: Local Installation
+### Option 3: Local Installation
 
 1. **Prerequisites**:
    - Python 3.11+

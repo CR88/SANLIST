@@ -41,7 +41,8 @@ class Config:
 
     # API (future use)
     API_HOST: str = os.getenv('API_HOST', '0.0.0.0')
-    API_PORT: int = int(os.getenv('API_PORT', '8000'))
+    # Railway uses PORT, fallback to API_PORT, then default 8000
+    API_PORT: int = int(os.getenv('PORT', os.getenv('API_PORT', '8000')))
     API_WORKERS: int = int(os.getenv('API_WORKERS', '4'))
 
     # Download settings
