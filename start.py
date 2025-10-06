@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
 Railway startup script
-Initializes database and starts the API server
+Initializes database, starts scheduler, and starts the API server
 """
 import os
 import sys
 import logging
+import threading
 from src.config import Config
 from src.database import SanctionsDatabase
+from src.scheduler import SanctionsScheduler
 
 # Setup logging
 logging.basicConfig(
@@ -40,6 +42,23 @@ def initialize_database():
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         return False
+
+
+def start_scheduler_background():
+    """Start the scheduler in a background thread"""
+    def run_scheduler():
+        try:
+            logger.info("Starting background scheduler for daily updates...")
+            logger.info(f"Scheduled update time: {Config.UPDATE_SCHEDULE_HOUR:02d}:{Config.UPDATE_SCHEDULE_MINUTE:02d} {Config.TIMEZONE}")
+            scheduler = SanctionsScheduler()
+            scheduler.run_scheduler()
+        except Exception as e:
+            logger.error(f"Scheduler error: {e}")
+
+    # Start scheduler in daemon thread (won't block main thread)
+    scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
+    scheduler_thread.start()
+    logger.info("✓ Background scheduler started")
 
 
 def start_api_server():
@@ -78,5 +97,8 @@ if __name__ == "__main__":
         logger.error("Failed to initialize database. Exiting.")
         sys.exit(1)
 
-    # Start API server
+    # Start scheduler in background thread
+    start_scheduler_background()
+
+    # Start API server (this blocks)
     start_api_server()
