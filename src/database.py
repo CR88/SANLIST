@@ -184,26 +184,29 @@ class SanctionsDatabase:
             logger.error(f"Error upserting entity {entity_data.get('unique_id')}: {e}")
             raise
 
-    def bulk_upsert(self, entities_data: List[Dict]) -> Tuple[int, int, int]:
+    def bulk_upsert(self, entities_data: List[Dict]) -> Tuple[int, int, int, int]:
         """
-        Bulk upsert multiple entities
+        Bulk upsert multiple entities and remove entities no longer in source
 
         Args:
             entities_data: List of entity dictionaries
 
         Returns:
-            Tuple[int, int, int]: (added, updated, errors)
+            Tuple[int, int, int, int]: (added, updated, removed, errors)
         """
         added = 0
         updated = 0
+        removed = 0
         errors = 0
 
         db = self.SessionLocal()
 
         try:
-            # Get existing unique_ids
+            # Get existing unique_ids and new unique_ids
             existing_ids = {e.unique_id for e in db.query(Entity.unique_id).all()}
+            new_ids = {entity_data['unique_id'] for entity_data in entities_data}
 
+            # Upsert entities (add new + update existing)
             for entity_data in entities_data:
                 try:
                     unique_id = entity_data['unique_id']
@@ -216,7 +219,7 @@ class SanctionsDatabase:
                     else:
                         added += 1
 
-                    # Commit in batches
+                    # Commit in batches for non-blocking updates
                     if (added + updated) % 100 == 0:
                         db.commit()
                         logger.info(f"Progress: {added} added, {updated} updated")
@@ -226,21 +229,39 @@ class SanctionsDatabase:
                     errors += 1
                     db.rollback()
 
-            # Final commit
+            # Commit any remaining changes
             db.commit()
-            logger.info(f"Bulk upsert complete: {added} added, {updated} updated, {errors} errors")
+
+            # Remove entities no longer in the source data
+            ids_to_remove = existing_ids - new_ids
+            if ids_to_remove:
+                logger.info(f"Removing {len(ids_to_remove)} entities no longer in source data...")
+
+                # Delete in batches to avoid long-running transactions
+                ids_list = list(ids_to_remove)
+                batch_size = 100
+
+                for i in range(0, len(ids_list), batch_size):
+                    batch = ids_list[i:i + batch_size]
+                    deleted = db.query(Entity).filter(Entity.unique_id.in_(batch)).delete(synchronize_session=False)
+                    db.commit()
+                    removed += deleted
+                    logger.info(f"Removed {deleted} entities (batch {i//batch_size + 1})")
+
+            logger.info(f"Update complete: {added} added, {updated} updated, {removed} removed, {errors} errors")
 
             # Log the update
             update_log = UpdateLog(
                 status='success' if errors == 0 else 'partial',
                 records_added=added,
                 records_updated=updated,
+                records_deleted=removed,
                 error_message=f"{errors} errors" if errors > 0 else None
             )
             db.add(update_log)
             db.commit()
 
-            return added, updated, errors
+            return added, updated, removed, errors
 
         except Exception as e:
             logger.error(f"Error in bulk upsert: {e}")

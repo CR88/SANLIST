@@ -64,11 +64,12 @@ class SanctionsScheduler:
 
             # Step 3: Update database
             logger.info("Step 3: Updating database...")
-            added, updated, errors = self.database.bulk_upsert(entities)
+            added, updated, removed, errors = self.database.bulk_upsert(entities)
 
             logger.info(f"Database update complete:")
             logger.info(f"  - Added: {added}")
             logger.info(f"  - Updated: {updated}")
+            logger.info(f"  - Removed: {removed}")
             logger.info(f"  - Errors: {errors}")
 
             # Step 4: Get stats
