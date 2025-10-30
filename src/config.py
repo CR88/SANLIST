@@ -15,9 +15,16 @@ class Config:
     """
 
     # Database
+    # Railway provides DATABASE_URL, but also check other common names
     DATABASE_URL: str = os.getenv(
         'DATABASE_URL',
-        'postgresql://sanctions:sanctions@localhost:5432/sanctions'
+        os.getenv(
+            'PGURL',  # Railway alternative
+            os.getenv(
+                'DATABASE_PRIVATE_URL',  # Railway private network
+                'postgresql://sanctions:sanctions@localhost:5432/sanctions'
+            )
+        )
     )
 
     # Data sources
