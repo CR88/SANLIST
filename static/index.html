@@ -325,6 +325,14 @@
                 const sanctionsData = await sanctionsResponse.json();
                 const ecData = await ecResponse.json();
 
+                // Format last update dates
+                const sanctionsLastUpdate = sanctionsData.last_update
+                    ? new Date(sanctionsData.last_update).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'Never';
+                const ecLastUpdate = ecData.last_update
+                    ? new Date(ecData.last_update).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'Never';
+
                 const statsDiv = document.getElementById('stats');
                 statsDiv.innerHTML = `
                     <strong>${sanctionsData.total_entities.toLocaleString()}</strong> total entities •
@@ -332,7 +340,8 @@
                     <strong>${sanctionsData.organizations.toLocaleString()}</strong> organizations •
                     <strong>${sanctionsData.total_aliases.toLocaleString()}</strong> aliases •
                     <strong>${ecData.total_donations.toLocaleString()}</strong> donations •
-                    <strong>£${(ecData.total_value / 1000000000).toFixed(2)}bn</strong> total value
+                    <strong>£${(ecData.total_value / 1000000000).toFixed(2)}bn</strong> total value<br>
+                    <small style="opacity: 0.8;">Sanctions updated: ${sanctionsLastUpdate} • Donations updated: ${ecLastUpdate}</small>
                 `;
                 statsDiv.style.display = 'block';
             } catch (error) {
