@@ -470,7 +470,24 @@ The API always returns the most recent data. Updates happen automatically in the
 
 ## Interactive Documentation
 
-Full interactive API documentation (Swagger UI) is available at:
+### Web Search Interface
+
+A public web-based search interface is available for manual searches:
+
+**URL**: `https://sanlist-production.up.railway.app/static/index.html`
+
+Features:
+- Simple search box for names, aliases, or IDs
+- Real-time search results
+- Detailed entity information (sanctions, aliases, addresses)
+- Database statistics
+- Mobile-friendly design
+
+Perfect for manual lookups or sharing with non-technical users.
+
+### API Documentation (Swagger UI)
+
+Full interactive API documentation is available at:
 
 **URL**: `https://sanlist-production.up.railway.app/docs`
 
@@ -479,6 +496,7 @@ This provides:
 - Try-it-out functionality
 - Request/response schemas
 - Example requests
+- Test API calls directly from your browser
 
 ---
 
