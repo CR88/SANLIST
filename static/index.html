@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UK Sanctions List Search</title>
+    <title>UK Sanctions & Donations Search</title>
     <style>
         * {
             margin: 0;
@@ -260,8 +260,8 @@
 <body>
     <div class="container">
         <header>
-            <h1>🔍 UK Sanctions List Search</h1>
-            <p class="subtitle">Search the UK Government's sanctions list database</p>
+            <h1>🔍 UK Sanctions & Political Donations Search</h1>
+            <p class="subtitle">Search UK sanctions and electoral commission donations (5,656 entities + 89,358 donations)</p>
         </header>
 
         <div id="stats" class="stats" style="display: none;">
@@ -352,25 +352,35 @@
             searchBtn.disabled = true;
 
             try {
-                let url;
-                if (searchType === 'fulltext') {
-                    url = `${API_URL}/api/search?q=${encodeURIComponent(query)}&limit=10000`;
-                } else {
-                    const exact = searchType === 'exact';
-                    url = `${API_URL}/api/entities?name=${encodeURIComponent(query)}&exact=${exact}&limit=10000`;
-                }
+                // Use tenant screening endpoint to search BOTH sanctions and donations
+                const url = `${API_URL}/api/screen-tenant?name=${encodeURIComponent(query)}&exact_match=false`;
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error('Search failed');
 
                 const data = await response.json();
 
-                resultCountDiv.textContent = `Found ${data.count} result${data.count !== 1 ? 's' : ''} for "${query}"`;
+                const totalMatches = data.sanctions_matches.length + data.donation_matches.length;
+                resultCountDiv.textContent = `Found ${totalMatches} result${totalMatches !== 1 ? 's' : ''} for "${query}" (${data.sanctions_matches.length} sanctions, ${data.donation_matches.length} donations)`;
 
-                if (data.count === 0) {
-                    resultsListDiv.innerHTML = '<div class="no-results">No results found. Try a different search term.</div>';
+                if (totalMatches === 0) {
+                    resultsListDiv.innerHTML = '<div class="no-results">No results found in sanctions or donations. Try a different search term.</div>';
                 } else {
-                    resultsListDiv.innerHTML = data.results.map(entity => createEntityCard(entity)).join('');
+                    let html = '';
+
+                    // Show sanctions matches
+                    if (data.sanctions_matches.length > 0) {
+                        html += '<h3 style="color: #d32f2f; margin: 20px 0 10px 0;">⚠️ Sanctions Matches (' + data.sanctions_matches.length + ')</h3>';
+                        html += data.sanctions_matches.map(match => createSanctionCard(match)).join('');
+                    }
+
+                    // Show donation matches
+                    if (data.donation_matches.length > 0) {
+                        html += '<h3 style="color: #1976d2; margin: 20px 0 10px 0;">💰 Political Donation Matches (' + data.donation_matches.length + ')</h3>';
+                        html += data.donation_matches.map(match => createDonationCard(match)).join('');
+                    }
+
+                    resultsListDiv.innerHTML = html;
                 }
             } catch (error) {
                 resultsListDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
@@ -379,7 +389,63 @@
             }
         }
 
-        // Create entity card HTML
+        // Create sanction card HTML (from screen-tenant response)
+        function createSanctionCard(match) {
+            return `
+                <div class="entity-card" style="border-left: 4px solid #d32f2f;">
+                    <div class="entity-header">
+                        <h3>${match.matched_name}</h3>
+                        <span class="entity-type individual">${match.entity_type} • ${match.severity}</span>
+                    </div>
+                    <div class="entity-details">
+                        <p><strong>ID:</strong> ${match.unique_id}</p>
+                        ${match.date_of_birth ? `<p><strong>DOB:</strong> ${match.date_of_birth}</p>` : ''}
+                        ${match.nationality ? `<p><strong>Nationality:</strong> ${match.nationality}</p>` : ''}
+                        ${match.date_listed ? `<p><strong>Listed:</strong> ${match.date_listed}</p>` : ''}
+                    </div>
+                    ${match.sanctions.length > 0 ? `
+                        <div class="sanctions">
+                            <strong>Sanctions:</strong>
+                            <ul>
+                                ${match.sanctions.map(s => `
+                                    <li>
+                                        <strong>${s.regime}</strong><br>
+                                        ${s.type}<br>
+                                        <small>${s.date ? 'Imposed: ' + s.date : ''}</small>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Create donation card HTML (from screen-tenant response)
+        function createDonationCard(match) {
+            const value = match.value ? `£${match.value.toLocaleString()}` : 'N/A';
+            return `
+                <div class="entity-card" style="border-left: 4px solid #1976d2;">
+                    <div class="entity-header">
+                        <h3>${match.donor_name}</h3>
+                        <span class="entity-type" style="background: #1976d2;">${match.database}</span>
+                    </div>
+                    <div class="entity-details">
+                        <p><strong>Matched As:</strong> ${match.matched_as}</p>
+                        <p><strong>Donor:</strong> ${match.donor_name}</p>
+                        <p><strong>Recipient:</strong> ${match.recipient_name}</p>
+                        <p><strong>Value:</strong> ${value}</p>
+                        ${match.donation_type ? `<p><strong>Type:</strong> ${match.donation_type}</p>` : ''}
+                        ${match.accepted_date ? `<p><strong>Date:</strong> ${match.accepted_date}</p>` : ''}
+                        ${match.donor_status ? `<p><strong>Donor Status:</strong> ${match.donor_status}</p>` : ''}
+                        ${match.company_reg ? `<p><strong>Company Reg:</strong> ${match.company_reg}</p>` : ''}
+                        ${match.postcode ? `<p><strong>Postcode:</strong> ${match.postcode}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Legacy: Create entity card HTML (kept for compatibility)
         function createEntityCard(entity) {
             const typeClass = entity.entity_type === 'Individual' ? 'individual' : 'entity';
 
