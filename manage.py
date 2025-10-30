@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """
-Management script for UK Sanctions Bot
+Management script for UK Sanctions Bot + Electoral Commission
 Provides easy commands for common operations
 """
 import sys
 import argparse
 from src.scheduler import SanctionsScheduler, setup_logging
+from src.ec_scheduler import ECScheduler
 from src.config import Config
 
 
@@ -15,11 +16,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python manage.py init       # Initialize database
-  python manage.py update     # Run one-time update
-  python manage.py run        # Start scheduler (daily updates)
-  python manage.py stats      # Show database statistics
-  python manage.py search "putin"  # Search for entities
+  # UK Sanctions List:
+  python manage.py init       # Initialize sanctions database
+  python manage.py update     # Run one-time sanctions update
+  python manage.py stats      # Show sanctions database statistics
+  python manage.py search "putin"  # Search for sanctioned entities
+
+  # Electoral Commission Donations:
+  python manage.py ec-init    # Initialize EC database
+  python manage.py ec-update  # Download and import EC donations
+  python manage.py ec-stats   # Show EC database statistics
+
+  # API Server:
   python manage.py api        # Start API server
   python manage.py api --reload  # Start API with auto-reload (dev)
         """
@@ -52,6 +60,11 @@ Examples:
     api_parser.add_argument('--host', default=None, help='Host to bind to (default: from config)')
     api_parser.add_argument('--port', type=int, default=None, help='Port to bind to (default: from config)')
     api_parser.add_argument('--reload', action='store_true', help='Enable auto-reload for development')
+
+    # Electoral Commission commands
+    subparsers.add_parser('ec-init', help='Initialize Electoral Commission database')
+    subparsers.add_parser('ec-update', help='Download and import EC donations')
+    subparsers.add_parser('ec-stats', help='Show EC database statistics')
 
     args = parser.parse_args()
 
@@ -128,6 +141,32 @@ Examples:
             reload=args.reload,
             log_level="info"
         )
+
+    # Electoral Commission commands
+    elif args.command == 'ec-init':
+        ec_scheduler = ECScheduler()
+        print("Initializing Electoral Commission database...")
+        ec_scheduler.database.create_tables()
+        print("✓ EC database initialized successfully")
+
+    elif args.command == 'ec-update':
+        ec_scheduler = ECScheduler()
+        print("Downloading and importing Electoral Commission donations...")
+        success = ec_scheduler.update_ec_data()
+        sys.exit(0 if success else 1)
+
+    elif args.command == 'ec-stats':
+        ec_scheduler = ECScheduler()
+        stats = ec_scheduler.database.get_stats()
+        print("\n" + "="*60)
+        print("Electoral Commission Database Statistics")
+        print("="*60)
+        print(f"Total Donations:      {stats['total_donations']:,}")
+        print(f"Total Value:          £{stats['total_value']:,.2f}")
+        print(f"Unique Donors:        {stats['unique_donors']:,}")
+        print(f"Unique Recipients:    {stats['unique_recipients']:,}")
+        print(f"Last Update:          {stats['last_update']}")
+        print("="*60 + "\n")
 
 
 if __name__ == "__main__":

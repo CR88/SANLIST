@@ -1,9 +1,9 @@
 """
-Database models for UK Sanctions List
+Database models for UK Sanctions List and Electoral Commission Donations
 """
 from datetime import datetime
 from sqlalchemy import (
-    Column, Integer, String, DateTime, ForeignKey, Text, Date, Index
+    Column, Integer, String, DateTime, ForeignKey, Text, Date, Index, Numeric, Boolean
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
@@ -114,7 +114,7 @@ class SanctionRegime(Base):
     id = Column(Integer, primary_key=True)
     entity_id = Column(Integer, ForeignKey('entities.id'), nullable=False)
     regime_name = Column(String(255), nullable=False)
-    regime_type = Column(String(100))
+    regime_type = Column(String(500))  # Increased from 100 to accommodate longer regime types
     date_imposed = Column(Date)
 
     entity = relationship("Entity", back_populates="sanctions")
@@ -143,3 +143,82 @@ class UpdateLog(Base):
 
     def __repr__(self):
         return f"<UpdateLog(id={self.id}, status='{self.status}', date='{self.update_date}')>"
+
+
+class Donation(Base):
+    """
+    Electoral Commission political donation records
+    """
+    __tablename__ = 'ec_donations'
+
+    id = Column(Integer, primary_key=True)
+
+    # Core donation info
+    ec_ref = Column(String(100), unique=True, nullable=False, index=True)
+    donor_name = Column(String(500), nullable=False, index=True)
+    recipient_name = Column(String(500), nullable=False, index=True)
+
+    # Donation details
+    value = Column(Numeric(15, 2))
+    accepted_date = Column(Date, index=True)
+    reported_date = Column(Date)
+    donation_type = Column(String(100))
+    nature_of_donation = Column(String(500))
+
+    # Donor information
+    donor_status = Column(String(100))
+    company_registration_number = Column(String(50))
+    postcode = Column(String(20))
+
+    # Recipient information
+    regulated_entity_name = Column(String(500))
+    regulated_entity_type = Column(String(100))
+    campaigning_name = Column(String(500))
+    register_name = Column(String(50))
+
+    # Additional fields
+    is_sponsorship = Column(Boolean, default=False)
+    is_irish_source = Column(Boolean)
+    is_bequest = Column(Boolean, default=False)
+    is_aggregation = Column(Boolean, default=False)
+    accounting_units_as_central_party = Column(String(500))
+    reporting_period_name = Column(String(100))
+    donation_action = Column(String(100))
+    purpose_of_visit = Column(Text)
+
+    # Metadata
+    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    # Full-text search vector
+    search_vector = Column(TSVECTOR)
+
+    __table_args__ = (
+        Index('idx_donation_search', 'search_vector', postgresql_using='gin'),
+        Index('idx_donation_donor_name', 'donor_name'),
+        Index('idx_donation_recipient_name', 'recipient_name'),
+        Index('idx_donation_value', 'value'),
+        Index('idx_donation_accepted_date', 'accepted_date'),
+    )
+
+    def __repr__(self):
+        return f"<Donation(id={self.id}, donor='{self.donor_name}', value={self.value})>"
+
+
+class ECUpdateLog(Base):
+    """
+    Log of Electoral Commission data updates
+    """
+    __tablename__ = 'ec_update_logs'
+
+    id = Column(Integer, primary_key=True)
+    update_date = Column(DateTime, default=datetime.utcnow)
+    status = Column(String(50))
+    records_updated = Column(Integer)
+    records_added = Column(Integer)
+    records_deleted = Column(Integer)
+    file_path = Column(String(1000))
+    error_message = Column(Text)
+
+    def __repr__(self):
+        return f"<ECUpdateLog(id={self.id}, status='{self.status}', date='{self.update_date}')>"
