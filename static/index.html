@@ -308,7 +308,8 @@
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:8000';
+        // Auto-detect API URL based on current domain
+        const API_URL = window.location.origin;
 
         // Load stats on page load
         async function loadStats() {
