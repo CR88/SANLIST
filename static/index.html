@@ -304,7 +304,9 @@
     </div>
 
     <div class="footer">
-        Data from <a href="https://www.gov.uk/government/publications/the-uk-sanctions-list" style="color: white;">UK Sanctions List</a>
+        Data sources:
+        <a href="https://www.gov.uk/government/publications/the-uk-sanctions-list" style="color: white; text-decoration: underline;">UK Sanctions List</a> •
+        <a href="https://search.electoralcommission.org.uk/" style="color: white; text-decoration: underline;">Electoral Commission</a>
     </div>
 
     <script>
@@ -314,15 +316,23 @@
         // Load stats on page load
         async function loadStats() {
             try {
-                const response = await fetch(`${API_URL}/api/stats`);
-                const data = await response.json();
+                // Fetch both sanctions and EC stats
+                const [sanctionsResponse, ecResponse] = await Promise.all([
+                    fetch(`${API_URL}/api/stats`),
+                    fetch(`${API_URL}/api/ec/stats`)
+                ]);
+
+                const sanctionsData = await sanctionsResponse.json();
+                const ecData = await ecResponse.json();
 
                 const statsDiv = document.getElementById('stats');
                 statsDiv.innerHTML = `
-                    <strong>${data.total_entities.toLocaleString()}</strong> total entities •
-                    <strong>${data.individuals.toLocaleString()}</strong> individuals •
-                    <strong>${data.organizations.toLocaleString()}</strong> organizations •
-                    <strong>${data.total_aliases.toLocaleString()}</strong> aliases
+                    <strong>${sanctionsData.total_entities.toLocaleString()}</strong> total entities •
+                    <strong>${sanctionsData.individuals.toLocaleString()}</strong> individuals •
+                    <strong>${sanctionsData.organizations.toLocaleString()}</strong> organizations •
+                    <strong>${sanctionsData.total_aliases.toLocaleString()}</strong> aliases •
+                    <strong>${ecData.total_donations.toLocaleString()}</strong> donations •
+                    <strong>£${(ecData.total_value / 1000000000).toFixed(2)}bn</strong> total value
                 `;
                 statsDiv.style.display = 'block';
             } catch (error) {
