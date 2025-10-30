@@ -438,18 +438,24 @@
                 <div class="entity-card" style="border-left: 4px solid #1976d2;">
                     <div class="entity-header">
                         <h3>${match.donor_name}</h3>
-                        <span class="entity-type" style="background: #1976d2;">${match.database}</span>
+                        <span class="entity-type" style="background: #1976d2;">${match.matched_as.toUpperCase()}</span>
                     </div>
                     <div class="entity-details">
-                        <p><strong>Matched As:</strong> ${match.matched_as}</p>
+                        <p><strong>EC Reference:</strong> ${match.ec_ref || 'N/A'}</p>
                         <p><strong>Donor:</strong> ${match.donor_name}</p>
                         <p><strong>Recipient:</strong> ${match.recipient_name}</p>
+                        ${match.regulated_entity_name ? `<p><strong>Regulated Entity:</strong> ${match.regulated_entity_name}</p>` : ''}
                         <p><strong>Value:</strong> ${value}</p>
                         ${match.donation_type ? `<p><strong>Type:</strong> ${match.donation_type}</p>` : ''}
-                        ${match.accepted_date ? `<p><strong>Date:</strong> ${match.accepted_date}</p>` : ''}
+                        ${match.accepted_date ? `<p><strong>Accepted Date:</strong> ${match.accepted_date}</p>` : ''}
+                        ${match.reported_date ? `<p><strong>Reported Date:</strong> ${match.reported_date}</p>` : ''}
+                        ${match.reporting_period_name ? `<p><strong>Reporting Period:</strong> ${match.reporting_period_name}</p>` : ''}
                         ${match.donor_status ? `<p><strong>Donor Status:</strong> ${match.donor_status}</p>` : ''}
                         ${match.company_reg ? `<p><strong>Company Reg:</strong> ${match.company_reg}</p>` : ''}
                         ${match.postcode ? `<p><strong>Postcode:</strong> ${match.postcode}</p>` : ''}
+                        ${match.register_name ? `<p><strong>Register:</strong> ${match.register_name}</p>` : ''}
+                        ${match.is_sponsorship ? `<p><strong>Sponsorship:</strong> Yes</p>` : ''}
+                        ${match.is_bequest ? `<p><strong>Bequest:</strong> Yes</p>` : ''}
                     </div>
                 </div>
             `;

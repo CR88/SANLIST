@@ -550,14 +550,21 @@ def screen_tenant(
                 match_data = {
                     "database": "ELECTORAL_COMMISSION",
                     "matched_as": "donor" if name.lower() in donation.donor_name.lower() else "recipient",
+                    "ec_ref": donation.ec_ref,
                     "donor_name": donation.donor_name,
                     "recipient_name": donation.recipient_name,
                     "value": float(donation.value) if donation.value else 0,
                     "donation_type": donation.donation_type,
                     "accepted_date": donation.accepted_date.isoformat() if donation.accepted_date else None,
+                    "reported_date": donation.reported_date.isoformat() if donation.reported_date else None,
                     "donor_status": donation.donor_status,
                     "company_reg": donation.company_registration_number,
                     "postcode": donation.postcode,
+                    "regulated_entity_name": donation.regulated_entity_name,
+                    "register_name": donation.register_name,
+                    "reporting_period_name": donation.reporting_period_name,
+                    "is_sponsorship": donation.is_sponsorship,
+                    "is_bequest": donation.is_bequest,
                     "severity": "INFO"
                 }
                 donation_matches.append(match_data)
