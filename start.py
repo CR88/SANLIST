@@ -82,9 +82,9 @@ def start_scheduler_background():
             schedule.every().day.at(schedule_time).do(sanctions_scheduler.update_sanctions_data)
             logger.info(f"✓ UK Sanctions scheduled for {schedule_time} {Config.TIMEZONE}")
 
-            # Schedule Electoral Commission update (30 minutes after sanctions)
-            ec_hour = (Config.UPDATE_SCHEDULE_HOUR + 1) % 24 if Config.UPDATE_SCHEDULE_MINUTE >= 30 else Config.UPDATE_SCHEDULE_HOUR
-            ec_minute = (Config.UPDATE_SCHEDULE_MINUTE + 30) % 60
+            # Schedule Electoral Commission update (6 hours after sanctions to avoid memory overlap)
+            ec_hour = (Config.UPDATE_SCHEDULE_HOUR + 6) % 24
+            ec_minute = Config.UPDATE_SCHEDULE_MINUTE
             ec_time = f"{ec_hour:02d}:{ec_minute:02d}"
             schedule.every().day.at(ec_time).do(ec_scheduler.update_ec_data)
             logger.info(f"✓ Electoral Commission scheduled for {ec_time} {Config.TIMEZONE}")
