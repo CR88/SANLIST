@@ -266,6 +266,7 @@ class SanctionsDatabase:
             logger.info(f"Upsert complete: {added} added, {updated} updated")
 
             # Remove entities no longer in the source data
+            existing_ids = set(existing_entities.keys())
             ids_to_remove = existing_ids - new_ids
             if ids_to_remove:
                 logger.info(f"Removing {len(ids_to_remove)} entities no longer in source data...")
