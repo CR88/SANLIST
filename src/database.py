@@ -277,10 +277,21 @@ class SanctionsDatabase:
 
                 for i in range(0, len(ids_list), batch_size):
                     batch = ids_list[i:i + batch_size]
-                    deleted = db.query(Entity).filter(Entity.unique_id.in_(batch)).delete(synchronize_session=False)
-                    db.commit()
-                    removed += deleted
-                    logger.info(f"Removed {deleted} entities (batch {i//batch_size + 1})")
+
+                    # Get entity IDs for the batch
+                    entity_ids = [existing_entities[uid] for uid in batch if uid in existing_entities]
+
+                    if entity_ids:
+                        # Delete child records first to avoid foreign key violations
+                        db.query(Alias).filter(Alias.entity_id.in_(entity_ids)).delete(synchronize_session=False)
+                        db.query(Address).filter(Address.entity_id.in_(entity_ids)).delete(synchronize_session=False)
+                        db.query(SanctionRegime).filter(SanctionRegime.entity_id.in_(entity_ids)).delete(synchronize_session=False)
+
+                        # Now delete the entities
+                        deleted = db.query(Entity).filter(Entity.unique_id.in_(batch)).delete(synchronize_session=False)
+                        db.commit()
+                        removed += deleted
+                        logger.info(f"Removed {deleted} entities (batch {i//batch_size + 1})")
 
             logger.info(f"Update complete: {added} added, {updated} updated, {removed} removed, {errors} errors")
 
