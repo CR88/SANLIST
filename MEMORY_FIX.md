@@ -66,11 +66,32 @@ Found and fixed bug in [src/database.py:269](src/database.py#L269):
 
 This bug prevented removal of delisted entities. Now fixed and deployed.
 
+## Verification - Nov 11, 2025 Update
+
+**Status: PARTIALLY SUCCESSFUL** ✅ Memory fix still working, found another bug
+
+Railway logs from Nov 11, 02:00 UTC show:
+1. ✅ Parser completed successfully (5,657 entities)
+2. ✅ Database upsert processed all 5,657 updates
+3. ✅ No memory/OOM issues - 6-hour spacing still working!
+4. ✅ Identified 2 delisted entities to remove (AQD0139, AQD0115)
+5. ❌ Foreign key violation when trying to delete entities
+
+## Additional Bug Fix #2
+
+Found and fixed foreign key constraint issue in [src/database.py:286-294](src/database.py#L286-L294):
+- Tried to delete entities that still had child records (aliases, addresses, sanctions)
+- PostgreSQL foreign key constraints prevented deletion
+- Fixed by deleting child records first, then parent entities
+
+This completes the removal workflow for delisted entities.
+
 ## Next Update
 
-Nov 11, 02:00 UTC will be the first **fully successful** update with:
+Nov 12, 02:00 UTC should be the first **fully successful** update with:
 - ✅ 6-hour schedule spacing (no memory issues)
-- ✅ Bug fix applied (delisted entities will be removed)
+- ✅ Variable name bug fixed
+- ✅ Cascade delete bug fixed (delisted entities will be properly removed)
 
 ## Credits
 
