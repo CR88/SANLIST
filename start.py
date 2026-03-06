@@ -140,6 +140,16 @@ if __name__ == "__main__":
         logger.error("Failed to initialize database. Exiting.")
         sys.exit(1)
 
+    # Run one-time update if requested via env var
+    if os.getenv('RUN_EC_UPDATE_ON_STARTUP', '').lower() == 'true':
+        logger.info("RUN_EC_UPDATE_ON_STARTUP is set - triggering EC update...")
+        try:
+            ec_scheduler = ECScheduler()
+            ec_scheduler.update_ec_data()
+            logger.info("Startup EC update complete")
+        except Exception as e:
+            logger.error(f"Startup EC update failed: {e}")
+
     # Start scheduler in background thread
     start_scheduler_background()
 
