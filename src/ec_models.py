@@ -34,7 +34,7 @@ class Donation(Base):
     # Donor information
     donor_status = Column(String(100))  # Individual, Company, Trade Union, etc.
     company_registration_number = Column(String(50))
-    postcode = Column(String(20))
+    postcode = Column(String(50))
 
     # Recipient information
     regulated_entity_name = Column(String(500))

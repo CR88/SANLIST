@@ -39,12 +39,31 @@ class ECDatabase:
             ])
             logger.info("Electoral Commission tables created successfully")
 
+            # Apply column migrations
+            self._apply_migrations()
+
             # Create full-text search triggers
             self._create_search_triggers()
 
         except Exception as e:
             logger.error(f"Error creating EC tables: {e}")
             raise
+
+    def _apply_migrations(self):
+        """
+        Apply column migrations for existing tables
+        """
+        try:
+            with self.engine.connect() as conn:
+                conn.execute(text("""
+                    ALTER TABLE ec_donations
+                    ALTER COLUMN postcode TYPE VARCHAR(50);
+                """))
+                conn.commit()
+                logger.info("EC migrations applied successfully")
+        except Exception as e:
+            # Column may already be the right size, or table may not exist yet
+            logger.debug(f"EC migration note: {e}")
 
     def _create_search_triggers(self):
         """
